@@ -1,0 +1,27 @@
+registry_version: "0.1"
+stage: "01"
+audited_at: "2026-08-16"
+
+tools:
+  - id: openwiki
+    repository: langchain-ai/openwiki
+    audited_commit: 60aada6c30d7e1d04d253e6ee52836c9a883f607
+    relevant_capability: deterministic connector ingestion to a raw cache before LLM synthesis
+    decision: design_reference
+    integration_now: false
+    reason: The connector architecture validates the raw-acquisition boundary, but importing OpenWiki would couple Stage 01 to a larger wiki runtime.
+
+  - id: okfy
+    repository: 0dust/OKFy
+    audited_commit: 33ac87605cd2bf065239670508d287685837b31b
+    relevant_capability: website crawl and local Markdown import
+    decision: defer
+    integration_now: false
+    reason: Current crawl/import commands transform source material directly into OKF concepts, spanning extraction, normalization, structuralization, and serialization rather than remaining a pure Stage 01 acquisition primitive.
+
+selection:
+  implementation: built-in-thin-providers
+  rationale:
+    - Stage 01 needs only local copy, single-resource HTTP fetch, and raw git acquisition initially.
+    - Python standard library plus the git executable covers those needs with a smaller dependency and audit surface.
+    - External tools remain eligible when a later Stage 01 source type actually requires them.

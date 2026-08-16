@@ -1,24 +1,30 @@
 # OKF-Generator
 
-OKF-Generator is a staged, version-aware workflow for turning heterogeneous source material into maintainable Open Knowledge Format (OKF) knowledge bundles.
+OKF-Generator is a versioned, stage-driven workflow for turning heterogeneous source material into an Open Knowledge Format (OKF) knowledge bundle.
 
-The project treats the workflow structure as deterministic: the ordered stages, contracts, version transitions, validation gates, and artifacts are fixed and auditable. Individual synthesis stages may use LLMs and are not required to be byte-deterministic.
+The pipeline topology is fixed up front and implemented sequentially. External tools are evaluated when a stage needs them rather than selected globally in advance.
 
-## Development principles
+## Current implementation
 
-The pipeline is implemented sequentially. A stage is specified, implemented, tested, and considered complete before implementation proceeds to the next stage. External tools are evaluated only when a current stage needs them; the project does not attempt to rank the entire OKF ecosystem up front.
+- **Stage 00 — Initialize:** complete. The workflow topology, OKF version pins, and adapter contract are defined.
+- **Stage 01 — Acquire:** implemented on the current development branch. Sources can be acquired from local paths, single HTTP(S) resources, and Git repositories without semantic transformation.
+- **Stage 02+**: planned and intentionally not implemented yet.
 
-The canonical stage graph is defined in [`workflow/stages.yaml`](workflow/stages.yaml). OKF version pins and supported transitions are defined in [`specs/okf/versions.yaml`](specs/okf/versions.yaml). Every version transition follows [`docs/adapter-contract.md`](docs/adapter-contract.md).
+See [`workflow/stages.yaml`](workflow/stages.yaml) for the complete stage graph and [`docs/stage-01-acquire.md`](docs/stage-01-acquire.md) for the Stage 01 contract.
 
-## Current implementation status
+## Development
 
-- Stage 00 — Initialize: complete
-- Stage 01 and later: specified in the stage graph but intentionally not implemented yet
+Requires Python 3.11+; Git is additionally required for the Git acquisition provider.
 
-The initial supported OKF version chain is:
-
-```text
-base LLM-Wiki model -> OKF 0.1 -> OKF 0.2
+```bash
+python -m pip install -e .
+# In an offline environment with setuptools already installed:
+# python -m pip install -e . --no-build-isolation
+python -m unittest discover -s tests -v
 ```
 
-Future OKF versions extend this chain through explicit adjacent-version adapters rather than replacing earlier versions.
+Example acquisition:
+
+```bash
+okf-generator acquire paper ./paper.pdf
+```
