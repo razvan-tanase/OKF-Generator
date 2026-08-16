@@ -1,0 +1,37 @@
+stage: "03-classify"
+registry_version: "0.1"
+
+scope_rule: Evaluate only tools needed to implement deterministic source/media classification at this stage.
+
+tools:
+  - id: builtin-classifier
+    status: selected
+    implementation: Python standard library plus project-owned pinned ruleset
+    roles:
+      - bounded file signature inspection
+      - text compatibility probe
+      - ZIP container metadata probe
+      - deterministic extension registry
+    reasons:
+      - no new runtime dependency
+      - behavior is controlled by repository code and ruleset version
+      - sufficient for current routing needs
+      - avoids host-specific MIME/magic databases
+
+  - id: system-libmagic
+    status: deferred
+    roles:
+      - broad file type detection
+    reasons:
+      - canonical results would depend on an external magic database and its version
+      - cross-platform packaging adds operational variability
+      - current builtin-v1 coverage is sufficient for Stage 04 routing
+    revisit_when:
+      - unsupported binary formats materially block extraction routing
+      - a magic database can be pinned and regression-tested as part of the toolchain
+
+  - id: python-mimetypes-host-db
+    status: not-used-as-authority
+    reasons:
+      - host/runtime MIME tables can vary
+      - extension-only MIME guesses are weaker than the project precedence contract
