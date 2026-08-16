@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Mapping
 
+from .acquire import SOURCE_ID_RE
 from .classification_detect import ClassificationDetectionError, EntryClassification, _summary, _walk_classifications
 from .snapshot import SnapshotEngine, SnapshotError, SnapshotManifest
 
@@ -101,6 +102,8 @@ class ClassificationEngine:
             raise ClassificationError(f"Stage 02 snapshot verification failed: {exc}") from exc
 
     def classify(self, source_id: str, snapshot_id: str) -> ClassificationManifest:
+        if not SOURCE_ID_RE.fullmatch(source_id):
+            raise ClassificationError("source_id must match Stage 01 source identifier rules")
         manifest = self.snapshot_verifier(source_id, snapshot_id)
         if manifest.stage != "02-snapshot" or manifest.source_id != source_id or manifest.snapshot_id != snapshot_id:
             raise ClassificationError("snapshot verifier returned inconsistent identity metadata")

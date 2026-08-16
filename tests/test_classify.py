@@ -192,6 +192,11 @@ class ClassifyTests(unittest.TestCase):
         with self.assertRaises(ClassificationError):
             engine.classify("race", self.sid)
 
+    def test_source_id_is_constrained_before_path_construction(self):
+        engine = ClassificationEngine(self.snapshots, self.out, snapshot_verifier=lambda s, i: None)
+        with self.assertRaises(ClassificationError):
+            engine.classify("../escape", self.sid)
+
     def test_default_verifier_rejects_snapshot_path_identity_mismatch(self):
         sid = "sha256-" + "b" * 64
         snapdir = self.snapshots / "x" / sid
