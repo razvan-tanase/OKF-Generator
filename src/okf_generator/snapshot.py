@@ -422,6 +422,36 @@ class SnapshotEngine:
         if not isinstance(storage, dict) or storage.get("value") != actual_storage.digest:
             raise SnapshotError("existing immutable snapshot payload has been modified")
 
+        artifact_kind = artifact_meta.get("kind")
+        version_lock = data.get("version_lock")
+        if not isinstance(version_lock, dict):
+            raise SnapshotError("existing snapshot version lock is malformed")
+        if artifact_kind == "bare-git-repository":
+            selected_ref = version_lock.get("selected_ref")
+            if not isinstance(selected_ref, str) or not selected_ref:
+                raise SnapshotError("existing git snapshot lock is missing selected_ref")
+            actual_lock = self._git_lock(artifact, selected_ref)
+            actual_source_digest, actual_basis, _ = self._source_identity(
+                "bare-git-repository", actual_storage, actual_lock
+            )
+            if actual_source_digest != source_digest or actual_basis != fingerprint.get("basis"):
+                raise SnapshotError("existing git snapshot no longer matches its immutable identity")
+            for field in (
+                "object_format",
+                "selected_object",
+                "selected_object_type",
+                "commit",
+            ):
+                if version_lock.get(field) != actual_lock.get(field):
+                    raise SnapshotError("existing git snapshot version lock has been modified")
+        else:
+            if fingerprint.get("basis") != CANONICAL_PAYLOAD_BASIS:
+                raise SnapshotError("existing snapshot uses an unexpected source identity basis")
+            if actual_storage.digest != source_digest:
+                raise SnapshotError("existing snapshot no longer matches its content address")
+            if version_lock.get("kind") != "content-digest" or version_lock.get("sha256") != source_digest:
+                raise SnapshotError("existing snapshot content lock has been modified")
+
         receipt_meta = data.get("acquisition")
         if not isinstance(receipt_meta, dict):
             raise SnapshotError("existing snapshot acquisition metadata is malformed")
@@ -438,8 +468,12 @@ class SnapshotEngine:
             integrity = json.loads(integrity_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise SnapshotError("existing snapshot integrity manifest is unreadable") from exc
+        if integrity.get("basis") != CANONICAL_PAYLOAD_BASIS:
+            raise SnapshotError("existing snapshot integrity basis is inconsistent")
         if integrity.get("sha256") != actual_storage.digest:
             raise SnapshotError("existing snapshot integrity manifest is inconsistent")
+        if integrity.get("entries") != list(actual_storage.entries):
+            raise SnapshotError("existing snapshot integrity entries are inconsistent")
 
         return SnapshotManifest(
             schema_version=str(data["schema_version"]),
