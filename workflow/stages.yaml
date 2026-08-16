@@ -28,8 +28,27 @@ stages:
   - id: "01"
     name: acquire
     purpose: Acquire or copy supplied source artifacts without semantic transformation.
-    status: planned
+    status: complete
     deterministic: true
+    inputs:
+      - explicit source locator
+      - source identifier
+      - optional provider and provider-specific acquisition parameters
+    outputs:
+      - .okf-generator/acquired/<source-id>/payload/
+      - .okf-generator/acquired/<source-id>/receipt.json
+      - workflow/acquisition.yaml
+      - workflow/tools/stage-01.yaml
+      - docs/stage-01-acquire.md
+    completion_criteria:
+      - local file and directory bytes are preserved
+      - symlinks are preserved instead of silently followed
+      - one explicit HTTP(S) resource can be acquired with bounded size
+      - git repositories are acquired as bare repositories without checkout transformations
+      - existing acquisitions are not overwritten implicitly
+      - provider failure does not publish partial output
+      - Stage 01 receipts contain no Stage 02 fingerprint
+      - new source systems can be added through the provider contract without changing pipeline topology
 
   - id: "02"
     name: snapshot

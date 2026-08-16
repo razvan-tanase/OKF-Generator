@@ -1,0 +1,49 @@
+schema_version: "0.1"
+stage: "01"
+name: acquire
+workspace_root: .okf-generator/acquired
+
+contract:
+  semantic_transformation: forbidden
+  publication_is_atomic: true
+  overwrite_requires_explicit_replace: true
+  receipt_required: true
+  fingerprinting: forbidden_until_stage_02
+  extraction: forbidden_until_stage_04
+
+receipt:
+  filename: receipt.json
+  schema_version: "0.1"
+  required_fields:
+    - stage
+    - source_id
+    - provider
+    - locator
+    - acquired_at
+    - artifact
+    - observations
+
+providers:
+  local:
+    status: implemented
+    input: local file, directory, or symlink
+    output: byte-preserving copy with symlinks preserved
+  http:
+    status: implemented
+    input: one explicit HTTP(S) resource
+    output: exact response body plus non-secret response observations
+    default_max_bytes: 104857600
+  git:
+    status: implemented
+    input: git repository locator and optional required ref
+    output: bare repository clone
+    checkout: false
+    submodule_expansion: false
+
+extension_policy:
+  rule: New acquisition mechanisms may be added as Stage 01 providers without changing pipeline topology.
+  requirements:
+    - source access is read-only
+    - acquired material is not semantically transformed
+    - provider emits the common receipt contract
+    - provider failure leaves no published partial acquisition
