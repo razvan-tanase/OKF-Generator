@@ -380,9 +380,13 @@ class SnapshotEngine:
                 os.replace(temp_dir, final_dir)
             except OSError:
                 if final_dir.exists():
-                    return self._verify_existing(
-                        final_dir, source_id, snapshot_id, source_digest
-                    )
+                    try:
+                        return self._verify_existing(
+                            final_dir, source_id, snapshot_id, source_digest
+                        )
+                    finally:
+                        if temp_dir.exists():
+                            shutil.rmtree(temp_dir, ignore_errors=True)
                 raise
             return manifest
         except Exception:
