@@ -1,0 +1,46 @@
+registry_version: "0.1"
+
+versions:
+  - version: "0.1"
+    status: historical
+    repository: GoogleCloudPlatform/knowledge-catalog
+    spec_path: okf/SPEC.md
+    spec_commit: ee67a5ca27044ebe7c38385f5b6cffc2305a9c1a
+    notes:
+      - Historical v0.1 remains part of the compatibility corpus.
+      - Tools targeting v0.1 may still be used through explicit adapters or compatibility projections.
+
+  - version: "0.2"
+    status: current_target
+    repository: GoogleCloudPlatform/knowledge-catalog
+    spec_path: okf/SPEC.md
+    spec_commit: 3fcbb9f828c2f23d109c855ee403c3a4c81f3a96
+    notes:
+      - Current target for the initial implementation.
+      - Pinning uses an immutable commit rather than a floating branch.
+
+transitions:
+  - id: base-to-0.1
+    from: base
+    to: "0.1"
+    kind: structuralization
+    status: planned
+
+  - id: 0.1-to-0.2
+    from: "0.1"
+    to: "0.2"
+    kind: canonical_migration
+    status: planned
+    upstream_reference_commit: 780fe9d30b5bbca8931256edf1d0290d6bda5462
+    required_properties:
+      - deterministic
+      - idempotent
+      - preserve_unknown_fields
+      - do_not_invent_semantics
+      - explicit_lossiness_diagnostics
+
+compatibility_policy:
+  forward_migrations_are_canonical: true
+  reverse_projection_may_be_lossy: true
+  reverse_projection_never_updates_canonical_state: true
+  unknown_future_versions: best_effort_read_only_until_adapter_exists
