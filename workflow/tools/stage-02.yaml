@@ -1,0 +1,30 @@
+stage: "02-snapshot"
+audit_version: "0.1"
+
+decision:
+  new_third_party_tool_required: false
+  rationale: Stage 02 requires deterministic hashing, filesystem copying, and Git object resolution only.
+
+tools:
+  - id: python-stdlib
+    status: selected
+    roles:
+      - SHA-256 hashing
+      - canonical filesystem inventory
+      - atomic filesystem publication
+      - JSON manifests
+    boundary: Does not interpret source content.
+
+  - id: git-cli
+    status: reused-from-stage-01
+    roles:
+      - verify bare repository
+      - resolve selected Git object
+      - peel selected object to immutable commit
+      - report Git object format
+    boundary: Git is used only for repository-native identity resolution; no checkout or content extraction occurs.
+
+deferred_capabilities:
+  - capability: cryptographic signing and issuer attestation
+    target_stage: "18-package"
+    reason: Signing proves integrity/issuer of a packaged artifact; it is not the source-version identity function.

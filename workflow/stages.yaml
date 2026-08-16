@@ -53,8 +53,27 @@ stages:
   - id: "02"
     name: snapshot
     purpose: Fingerprint and preserve immutable source versions.
-    status: planned
+    status: complete
     deterministic: true
+    inputs:
+      - completed Stage 01 acquisition directory and receipt
+    outputs:
+      - .okf-generator/snapshots/<source-id>/sha256-<identity>/payload/
+      - .okf-generator/snapshots/<source-id>/sha256-<identity>/snapshot.json
+      - .okf-generator/snapshots/<source-id>/sha256-<identity>/integrity.json
+      - .okf-generator/snapshots/<source-id>/sha256-<identity>/acquisition-receipt.json
+      - workflow/snapshot.yaml
+      - workflow/tools/stage-02.yaml
+      - docs/stage-02-snapshot.md
+    completion_criteria:
+      - ordinary artifacts use stable canonical SHA-256 content identities
+      - Git sources lock the selected object and peeled commit identity
+      - copied payload integrity is checked before atomic publication
+      - existing snapshots are never overwritten
+      - identical repeat snapshots verify and return idempotently
+      - mutation of an existing snapshot is detected
+      - acquisition receipts are preserved and integrity-checked
+      - Stage 02 introduces no media classification or content extraction
 
   - id: "03"
     name: classify
