@@ -7,7 +7,6 @@ name = "okf-generator"
 version = "0.1.0"
 description = "Versioned pipeline for building Open Knowledge Format bundles"
 requires-python = ">=3.11"
-license = {text = "MIT"}
 
 [project.scripts]
 okf-generator = "okf_generator.cli:main"
