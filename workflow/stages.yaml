@@ -1,0 +1,139 @@
+workflow_version: "0.1"
+
+principles:
+  fixed_topology: true
+  sequential_implementation: true
+  stage_skipping_requires_reason: true
+  external_tools_must_fit_declared_stage: true
+  llm_output_byte_determinism_required: false
+  structural_determinism_required: true
+
+stages:
+  - id: "00"
+    name: initialize
+    purpose: Pin workflow, policies, OKF specifications, adapter contracts, and toolchain assumptions.
+    status: implementing
+    deterministic: true
+    inputs: []
+    outputs:
+      - workflow/stages.yaml
+      - specs/okf/versions.yaml
+      - docs/adapter-contract.md
+    completion_criteria:
+      - stage graph is explicit and ordered
+      - supported OKF versions are pinned to immutable upstream commits
+      - adjacent-version adapter contract is documented
+      - future stages cannot silently add undeclared processing steps
+
+  - id: "01"
+    name: acquire
+    purpose: Acquire or copy supplied source artifacts without semantic transformation.
+    status: planned
+    deterministic: true
+
+  - id: "02"
+    name: snapshot
+    purpose: Fingerprint and preserve immutable source versions.
+    status: planned
+    deterministic: true
+
+  - id: "03"
+    name: classify
+    purpose: Classify source and media types for routing.
+    status: planned
+    deterministic: true
+
+  - id: "04"
+    name: extract
+    purpose: Convert source artifacts into structured source representations.
+    status: planned
+    deterministic: mixed
+
+  - id: "05"
+    name: normalize
+    purpose: Canonicalize extracted text, metadata, anchors, and source identifiers.
+    status: planned
+    deterministic: true
+
+  - id: "06"
+    name: synthesize
+    purpose: Produce candidate concepts, claims, relations, and summaries.
+    status: planned
+    deterministic: false
+
+  - id: "07"
+    name: resolve
+    purpose: Match candidates against existing concept identities.
+    status: planned
+    deterministic: mixed
+
+  - id: "08"
+    name: plan
+    purpose: Decide create, update, merge, contradict, supersede, or ignore operations.
+    status: planned
+    deterministic: mixed
+
+  - id: "09"
+    name: compile
+    purpose: Apply accepted changes to the canonical internal knowledge state.
+    status: planned
+    deterministic: true
+
+  - id: "10"
+    name: structuralize
+    purpose: Apply base LLM-Wiki and initial OKF structural conventions.
+    status: planned
+    deterministic: true
+
+  - id: "11"
+    name: migrate
+    purpose: Apply adjacent OKF version adapters sequentially to the configured target version.
+    status: planned
+    deterministic: true
+
+  - id: "12"
+    name: enrich
+    purpose: Populate optional target-version semantics only when supported by actual evidence or policy.
+    status: planned
+    deterministic: mixed
+
+  - id: "13"
+    name: derive
+    purpose: Derive indexes, logs, backlinks, graphs, and manifests from canonical state.
+    status: planned
+    deterministic: true
+
+  - id: "14"
+    name: serialize
+    purpose: Emit canonical Markdown/YAML and other declared bundle artifacts.
+    status: planned
+    deterministic: true
+
+  - id: "15"
+    name: conformance
+    purpose: Run version-appropriate independent OKF validators.
+    status: planned
+    deterministic: true
+
+  - id: "16"
+    name: quality
+    purpose: Apply stricter project quality rules beyond base OKF conformance.
+    status: planned
+    deterministic: mixed
+
+  - id: "17"
+    name: regression
+    purpose: Check invariants, idempotence, change locality, and version migration behavior.
+    status: planned
+    deterministic: true
+
+  - id: "18"
+    name: package
+    purpose: Optionally sign, publish, serve, or otherwise package the validated bundle.
+    status: planned
+    deterministic: mixed
+
+stage_change_policy:
+  rule: A new processing operation must map to an existing stage or require a workflow version change.
+  no_op_allowed: true
+  skip_requires_recorded_reason: true
