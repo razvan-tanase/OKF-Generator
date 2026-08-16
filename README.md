@@ -4,7 +4,7 @@ OKF-Generator is a staged, version-aware workflow for turning heterogeneous sour
 
 The project treats the workflow structure as deterministic: the ordered stages, contracts, version transitions, validation gates, and artifacts are fixed and auditable. Individual synthesis stages may use LLMs and are not required to be byte-deterministic.
 
-## Development principle
+## Development principles
 
 The pipeline is implemented sequentially. A stage is specified, implemented, tested, and considered complete before implementation proceeds to the next stage. External tools are evaluated only when a current stage needs them; the project does not attempt to rank the entire OKF ecosystem up front.
 
@@ -12,7 +12,7 @@ The canonical stage graph is defined in [`workflow/stages.yaml`](workflow/stages
 
 ## Current implementation status
 
-- Stage 00 — Initialize: in implementation
+- Stage 00 — Initialize: complete
 - Stage 01 and later: specified in the stage graph but intentionally not implemented yet
 
 The initial supported OKF version chain is:
