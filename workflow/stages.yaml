@@ -12,7 +12,7 @@ stages:
   - id: "00"
     name: initialize
     purpose: Pin workflow, policies, OKF specifications, adapter contracts, and toolchain assumptions.
-    status: implementing
+    status: complete
     deterministic: true
     inputs: []
     outputs:
