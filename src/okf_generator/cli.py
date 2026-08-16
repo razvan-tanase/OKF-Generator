@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from .acquire import AcquisitionEngine, AcquisitionError, AcquisitionSpec, DEFAULT_MAX_HTTP_BYTES
+from .snapshot import SnapshotEngine, SnapshotError
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,6 +23,22 @@ def build_parser() -> argparse.ArgumentParser:
     acquire.add_argument("--out", type=Path, default=Path(".okf-generator/acquired"))
     acquire.add_argument("--replace", action="store_true")
     acquire.add_argument("--max-http-bytes", type=int, default=DEFAULT_MAX_HTTP_BYTES)
+
+    snapshot = subparsers.add_parser(
+        "snapshot",
+        help="Stage 02: fingerprint and preserve an immutable acquired source version",
+    )
+    snapshot.add_argument("source_id")
+    snapshot.add_argument(
+        "--acquired-root",
+        type=Path,
+        default=Path(".okf-generator/acquired"),
+    )
+    snapshot.add_argument(
+        "--out",
+        type=Path,
+        default=Path(".okf-generator/snapshots"),
+    )
     return parser
 
 
@@ -43,7 +60,14 @@ def main(argv: list[str] | None = None) -> int:
             )
             sys.stdout.write(receipt.to_json())
             return 0
-    except AcquisitionError as exc:
+        if args.command == "snapshot":
+            manifest = SnapshotEngine(
+                acquisition_root=args.acquired_root,
+                snapshot_root=args.out,
+            ).snapshot(args.source_id)
+            sys.stdout.write(manifest.to_json())
+            return 0
+    except (AcquisitionError, SnapshotError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     return 2

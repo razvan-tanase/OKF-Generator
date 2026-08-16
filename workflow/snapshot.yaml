@@ -1,0 +1,66 @@
+contract_version: "0.1"
+stage: "02-snapshot"
+
+input:
+  root: .okf-generator/acquired/<source-id>/
+  required:
+    - receipt.json
+    - receipt stage is 01-acquire
+    - receipt source_id matches requested source_id
+    - receipt artifact path stays inside the acquisition directory
+
+output:
+  root: .okf-generator/snapshots/<source-id>/sha256-<identity>/
+  files:
+    - snapshot.json
+    - acquisition-receipt.json
+    - integrity.json
+    - payload/
+
+identity:
+  ordinary_artifacts:
+    algorithm: sha256
+    basis: canonical-filesystem-v1
+    includes:
+      - relative paths
+      - entry kinds
+      - file byte digests and sizes
+      - portable executable bit
+      - empty directories
+      - symlink targets without dereference
+    excludes:
+      - mtimes
+      - uid and gid
+      - non-executable permission bits
+  git:
+    algorithm: sha256
+    basis: git-object-lock-v1
+    descriptor:
+      - object_format
+      - selected_object
+      - selected_object_type
+      - peeled_commit
+    selected_ref_is_metadata_not_identity: true
+
+immutability:
+  overwrite_existing_snapshot: forbidden
+  identical_repeat: verify-and-return
+  changed_source_version: create-new-snapshot
+  tampered_existing_snapshot: fail
+  atomic_publication: true
+
+integrity:
+  verify_source_before_and_after_copy: true
+  verify_copy_before_publish: true
+  preserve_exact_acquisition_receipt: true
+  receipt_sha256_recorded: true
+  git_storage_has_separate_filesystem_fingerprint: true
+
+forbidden:
+  - media classification
+  - text extraction
+  - normalization
+  - crawling implicit resources
+  - semantic deduplication
+  - concept generation
+  - OKF serialization
