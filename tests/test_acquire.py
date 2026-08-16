@@ -118,6 +118,12 @@ class AcquisitionTests(unittest.TestCase):
         artifact = self.out / "x" / receipt.artifact["path"]
         self.assertEqual(artifact.read_text(encoding="utf-8"), "v2")
 
+    def test_ref_with_auto_provider_fails_for_non_git_locator(self):
+        source = self.root / "x.txt"
+        source.write_text("v1", encoding="utf-8")
+        with self.assertRaises(AcquisitionError):
+            self.engine.acquire(AcquisitionSpec("x", str(source), provider="auto", ref="main"))
+
     def test_http_acquisition_preserves_response_body(self):
         server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
         thread = threading.Thread(target=server.serve_forever, daemon=True)

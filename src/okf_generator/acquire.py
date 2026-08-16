@@ -121,7 +121,7 @@ class LocalProvider:
         source_resolved = source.resolve(strict=False)
         if source.is_dir() and self.acquisition_root.is_relative_to(source_resolved):
             raise AcquisitionError(
-                "acquisition output must not be inside the acquired directory"
+                "acquisition output root must not be inside the source directory"
             )
 
         payload = workspace / "payload"
@@ -272,7 +272,7 @@ class GitProvider:
         self._run(["git", "clone", "--bare", "--", locator, str(repo)])
         if spec.ref:
             self._run(
-                ["git", "rev-parse", "--verify", f"{spec.ref}^{{commit}}"],
+                ["git", "rev-parse", "--verify", "--end-of-options", f"{spec.ref}^{{commit}}"],
                 cwd=repo,
             )
 
@@ -311,6 +311,8 @@ class AcquisitionEngine:
     def acquire(self, spec: AcquisitionSpec, *, replace: bool = False) -> AcquisitionReceipt:
         spec.validate()
         provider_name = infer_provider(spec.locator) if spec.provider == "auto" else spec.provider
+        if spec.ref and provider_name != "git":
+            raise AcquisitionError("ref is only valid for git acquisition")
         provider = self.providers.get(provider_name)
         if provider is None:
             raise AcquisitionError(f"provider not registered: {provider_name}")
