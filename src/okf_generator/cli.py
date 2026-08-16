@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .acquire import AcquisitionEngine, AcquisitionError, AcquisitionSpec, DEFAULT_MAX_HTTP_BYTES
 from .classify import ClassificationEngine, ClassificationError, RULESET_ID
+from .extract import ExtractionEngine, ExtractionError, PROFILE_ID
 from .snapshot import SnapshotEngine, SnapshotError
 
 
@@ -58,6 +59,30 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path(".okf-generator/classifications"),
     )
     classify.add_argument("--ruleset", default=RULESET_ID)
+
+    extract = subparsers.add_parser(
+        "extract",
+        help="Stage 04: extract structured source units from a verified classified snapshot",
+    )
+    extract.add_argument("source_id")
+    extract.add_argument("snapshot_id")
+    extract.add_argument(
+        "--snapshots-root",
+        type=Path,
+        default=Path(".okf-generator/snapshots"),
+    )
+    extract.add_argument(
+        "--classifications-root",
+        type=Path,
+        default=Path(".okf-generator/classifications"),
+    )
+    extract.add_argument(
+        "--out",
+        type=Path,
+        default=Path(".okf-generator/extractions"),
+    )
+    extract.add_argument("--ruleset", default=RULESET_ID)
+    extract.add_argument("--profile", default=PROFILE_ID)
     return parser
 
 
@@ -94,7 +119,17 @@ def main(argv: list[str] | None = None) -> int:
             ).classify(args.source_id, args.snapshot_id)
             sys.stdout.write(manifest.to_json())
             return 0
-    except (AcquisitionError, SnapshotError, ClassificationError) as exc:
+        if args.command == "extract":
+            manifest = ExtractionEngine(
+                snapshot_root=args.snapshots_root,
+                classification_root=args.classifications_root,
+                output_root=args.out,
+                ruleset=args.ruleset,
+                profile=args.profile,
+            ).extract(args.source_id, args.snapshot_id)
+            sys.stdout.write(manifest.to_json())
+            return 0
+    except (AcquisitionError, SnapshotError, ClassificationError, ExtractionError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     return 2

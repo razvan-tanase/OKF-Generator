@@ -101,8 +101,29 @@ stages:
   - id: "04"
     name: extract
     purpose: Convert source artifacts into structured source representations.
-    status: planned
+    status: complete
     deterministic: mixed
+    inputs:
+      - verified Stage 02 source_id and immutable snapshot_id
+      - existing Stage 03 classification for the configured ruleset
+    outputs:
+      - .okf-generator/extractions/<source-id>/<snapshot-id>/<classification-ruleset>/<profile>/extraction.json
+      - .okf-generator/extractions/<source-id>/<snapshot-id>/<classification-ruleset>/<profile>/units.jsonl
+      - workflow/extraction.yaml
+      - workflow/tools/stage-04.yaml
+      - docs/stage-04-extract.md
+    completion_criteria:
+      - only verified Stage 02 and Stage 03 pairs are extracted
+      - output is bound to exact snapshot and classification hashes
+      - source-native text and locators are retained without Stage 05 normalization
+      - PDF embedded text is page-addressable and no-text pages are diagnosed
+      - OOXML, ODF, and EPUB package ordering and native locators are represented
+      - archive and Git extraction are bounded and preserve member/blob identity
+      - every classified entry is represented or explicitly diagnosed as unsupported
+      - symlinks are never dereferenced
+      - input mutation during extraction is detected
+      - existing extraction output is never overwritten
+      - Stage 04 introduces no normalization, synthesis, or OKF serialization
 
   - id: "05"
     name: normalize

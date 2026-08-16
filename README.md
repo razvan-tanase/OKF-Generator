@@ -10,17 +10,18 @@ The pipeline topology is fixed up front and implemented sequentially. External t
 - **Stage 01 — Acquire:** complete. Sources can be acquired from local paths, single HTTP(S) resources, and Git repositories without semantic transformation.
 - **Stage 02 — Snapshot:** complete. Acquisitions are fingerprinted, Git refs are locked to immutable objects/commits, and source versions are preserved in append-only content-addressed storage.
 - **Stage 03 — Classify:** complete. Verified snapshots are deterministically classified with a versioned routing ruleset, bounded signature/container inspection, conflict diagnostics, and no semantic extraction.
-- **Stage 04+**: planned and intentionally not implemented yet.
+- **Stage 04 — Extract:** complete. Classified immutable snapshots are converted into evidence-oriented source units with native locators, bounded document/archive/Git extraction, explicit unsupported-route diagnostics, and no normalization or synthesis.
+- **Stage 05+**: planned and intentionally not implemented yet.
 
-See [`workflow/stages.yaml`](workflow/stages.yaml) for the complete stage graph, [`docs/stage-01-acquire.md`](docs/stage-01-acquire.md) for acquisition, [`docs/stage-02-snapshot.md`](docs/stage-02-snapshot.md) for snapshotting, and [`docs/stage-03-classify.md`](docs/stage-03-classify.md) for classification.
+See [`workflow/stages.yaml`](workflow/stages.yaml) for the complete stage graph, [`docs/stage-01-acquire.md`](docs/stage-01-acquire.md) for acquisition, [`docs/stage-02-snapshot.md`](docs/stage-02-snapshot.md) for snapshotting, [`docs/stage-03-classify.md`](docs/stage-03-classify.md) for classification, and [`docs/stage-04-extract.md`](docs/stage-04-extract.md) for extraction.
 
 ## Development
 
-Requires Python 3.11+; Git is additionally required for Git acquisition and Git snapshot locking.
+Requires Python 3.11+; Git is additionally required for Git acquisition, Git snapshot locking, and Git source extraction. Stage 04 pins its Python extraction dependencies in `pyproject.toml`.
 
 ```bash
 python -m pip install -e .
-# In an offline environment with setuptools already installed:
+# In an offline environment with all pinned dependencies already installed:
 # python -m pip install -e . --no-build-isolation
 python -m unittest discover -s tests -v
 ```
@@ -31,4 +32,5 @@ Example:
 okf-generator acquire paper ./paper.pdf
 okf-generator snapshot paper
 okf-generator classify paper sha256-<snapshot-digest>
+okf-generator extract paper sha256-<snapshot-digest>
 ```

@@ -1,0 +1,30 @@
+stage: "04"
+name: extract
+audit_scope: only tools needed by Stage 04
+selected:
+  - tool: pypdf
+    version: 6.16.1
+    role: embedded PDF text extraction
+    selection_reason:
+      - page-oriented extraction maps directly to native PDF page locators
+      - pure Python dependency avoids OCR/system-binary requirements for the initial PDF route
+      - does not perform OCR, chunking, synthesis, or OKF compilation
+    runtime_policy: record actual parser version in extraction.json
+  - tool: defusedxml
+    version: 0.7.1
+    role: hardened XML parsing for OOXML, ODF, and EPUB packages
+    selection_reason:
+      - small narrowly scoped parser hardening dependency
+      - keeps package parsing local and deterministic
+reused:
+  - tool: git
+    role: enumerate blobs from the Stage 02 locked commit
+    runtime_policy: record runtime version in extraction.json
+deferred:
+  - tool: Unstructured
+    reason: broad partition/OCR stack and optional system dependencies exceed the current narrow extraction need; reconsider for OCR or unsupported complex formats
+  - tool: OmniOKF / gemini-okf-compiler
+    reason: compiles raw documents directly into OKF and therefore spans later normalization, synthesis, and serialization stages
+policy:
+  no_silent_fallback: true
+  tool_version_changes_cannot_overwrite_existing_extraction: true
