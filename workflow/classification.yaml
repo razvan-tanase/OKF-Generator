@@ -1,0 +1,57 @@
+stage: "03"
+name: classify
+contract_version: "0.1"
+active_ruleset: builtin-v1
+
+determinism:
+  output_for_same_snapshot_and_ruleset: byte_identical
+  clock_fields_allowed: false
+  overwrite_same_ruleset: false
+  rule_change_requires_new_ruleset: true
+
+input:
+  requires_verified_stage_02_snapshot: true
+  identity:
+    - source_id
+    - snapshot_id
+
+output:
+  root: .okf-generator/classifications
+  path: <source-id>/<snapshot-id>/<ruleset>/classification.json
+  binds_snapshot_manifest_sha256: true
+
+inspection:
+  prefix_bytes: 65536
+  follows_symlinks: false
+  zip:
+    extracts_members: false
+    max_container_bytes_for_structure_probe: 268435456
+    max_members_for_deep_probe: 20000
+    standardized_mimetype_max_bytes: 128
+
+precedence:
+  - stage_02_artifact_kind
+  - strong_signature_or_container_structure
+  - extension_plus_signature_family
+  - extension_plus_text_probe
+  - generic_text_or_binary
+
+source_routes:
+  git_repository: git
+  directory: directory
+  symlink: symlink
+
+ruleset_policy:
+  current: builtin-v1
+  registry_owned_by_project: true
+  host_mime_database_authoritative: false
+  system_libmagic_authoritative: false
+
+forbidden:
+  - semantic parsing
+  - archive extraction
+  - office XML parsing
+  - Git blob enumeration
+  - concept synthesis
+  - content normalization
+  - OKF serialization

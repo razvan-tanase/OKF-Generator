@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from .acquire import AcquisitionEngine, AcquisitionError, AcquisitionSpec, DEFAULT_MAX_HTTP_BYTES
+from .classify import ClassificationEngine, ClassificationError, RULESET_ID
 from .snapshot import SnapshotEngine, SnapshotError
 
 
@@ -39,6 +40,24 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path(".okf-generator/snapshots"),
     )
+
+    classify = subparsers.add_parser(
+        "classify",
+        help="Stage 03: deterministically classify a verified immutable snapshot",
+    )
+    classify.add_argument("source_id")
+    classify.add_argument("snapshot_id")
+    classify.add_argument(
+        "--snapshots-root",
+        type=Path,
+        default=Path(".okf-generator/snapshots"),
+    )
+    classify.add_argument(
+        "--out",
+        type=Path,
+        default=Path(".okf-generator/classifications"),
+    )
+    classify.add_argument("--ruleset", default=RULESET_ID)
     return parser
 
 
@@ -67,7 +86,15 @@ def main(argv: list[str] | None = None) -> int:
             ).snapshot(args.source_id)
             sys.stdout.write(manifest.to_json())
             return 0
-    except (AcquisitionError, SnapshotError) as exc:
+        if args.command == "classify":
+            manifest = ClassificationEngine(
+                snapshot_root=args.snapshots_root,
+                output_root=args.out,
+                ruleset=args.ruleset,
+            ).classify(args.source_id, args.snapshot_id)
+            sys.stdout.write(manifest.to_json())
+            return 0
+    except (AcquisitionError, SnapshotError, ClassificationError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     return 2

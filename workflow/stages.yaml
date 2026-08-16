@@ -78,8 +78,25 @@ stages:
   - id: "03"
     name: classify
     purpose: Classify source and media types for routing.
-    status: planned
+    status: complete
     deterministic: true
+    inputs:
+      - verified Stage 02 source_id and immutable snapshot_id
+    outputs:
+      - .okf-generator/classifications/<source-id>/<snapshot-id>/<ruleset>/classification.json
+      - workflow/classification.yaml
+      - workflow/tools/stage-03.yaml
+      - docs/stage-03-classify.md
+    completion_criteria:
+      - only verified immutable Stage 02 snapshots are classified
+      - classification is byte-deterministic for a fixed snapshot and ruleset
+      - rule changes require a new ruleset instead of overwriting prior output
+      - signature and container evidence outrank conflicting filename extensions
+      - textual routes require a compatible bounded text probe
+      - directory inventories are deterministic and symlinks are not followed
+      - Git snapshots are routed at repository level without source-tree extraction
+      - snapshot mutation during classification is detected
+      - classification introduces no semantic parsing or extraction
 
   - id: "04"
     name: extract
