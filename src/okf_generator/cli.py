@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .acquire import AcquisitionEngine, AcquisitionError, AcquisitionSpec, DEFAULT_MAX_HTTP_BYTES
 from .classify import ClassificationEngine, ClassificationError, RULESET_ID
+from .compile import PROFILE_ID as COMPILATION_PROFILE_ID, CompilationEngine, CompilationError
 from .extract import ExtractionEngine, ExtractionError, PROFILE_ID as EXTRACTION_PROFILE_ID
 from .normalize import NormalizationEngine, NormalizationError, PROFILE_ID as NORMALIZATION_PROFILE_ID
 from .plan import PROFILE_ID as PLANNING_PROFILE_ID, PlanningEngine, PlanningError
@@ -255,6 +256,44 @@ def build_parser() -> argparse.ArgumentParser:
     plan.add_argument("--synthesis-profile", default=SYNTHESIS_PROFILE_ID)
     plan.add_argument("--resolution-profile", default=RESOLUTION_PROFILE_ID)
     plan.add_argument("--profile", default=PLANNING_PROFILE_ID)
+
+    compile_cmd = subparsers.add_parser(
+        "compile",
+        help="Stage 09: atomically apply one verified Stage 08 plan to canonical internal state",
+    )
+    compile_cmd.add_argument("source_id")
+    compile_cmd.add_argument("snapshot_id")
+    compile_cmd.add_argument("synthesis_run_id")
+    compile_cmd.add_argument("resolution_run_id")
+    compile_cmd.add_argument("plan_run_id")
+    compile_cmd.add_argument("--synthesis-provider", default="openai")
+    compile_cmd.add_argument(
+        "--syntheses-root",
+        type=Path,
+        default=Path(".okf-generator/syntheses"),
+    )
+    compile_cmd.add_argument(
+        "--resolutions-root",
+        type=Path,
+        default=Path(".okf-generator/resolutions"),
+    )
+    compile_cmd.add_argument(
+        "--plans-root",
+        type=Path,
+        default=Path(".okf-generator/plans"),
+    )
+    compile_cmd.add_argument(
+        "--state-root",
+        type=Path,
+        default=Path(".okf-generator/state"),
+    )
+    compile_cmd.add_argument("--ruleset", default=RULESET_ID)
+    compile_cmd.add_argument("--extraction-profile", default=EXTRACTION_PROFILE_ID)
+    compile_cmd.add_argument("--normalization-profile", default=NORMALIZATION_PROFILE_ID)
+    compile_cmd.add_argument("--synthesis-profile", default=SYNTHESIS_PROFILE_ID)
+    compile_cmd.add_argument("--resolution-profile", default=RESOLUTION_PROFILE_ID)
+    compile_cmd.add_argument("--planning-profile", default=PLANNING_PROFILE_ID)
+    compile_cmd.add_argument("--profile", default=COMPILATION_PROFILE_ID)
     return parser
 
 
@@ -375,6 +414,29 @@ def main(argv: list[str] | None = None) -> int:
             )
             sys.stdout.write(manifest.to_json())
             return 0
+        if args.command == "compile":
+            manifest = CompilationEngine(
+                synthesis_root=args.syntheses_root,
+                resolution_root=args.resolutions_root,
+                plan_root=args.plans_root,
+                state_root=args.state_root,
+                ruleset=args.ruleset,
+                extraction_profile=args.extraction_profile,
+                normalization_profile=args.normalization_profile,
+                synthesis_profile=args.synthesis_profile,
+                resolution_profile=args.resolution_profile,
+                planning_profile=args.planning_profile,
+                profile=args.profile,
+            ).compile(
+                args.source_id,
+                args.snapshot_id,
+                args.synthesis_run_id,
+                args.resolution_run_id,
+                args.plan_run_id,
+                synthesis_provider=args.synthesis_provider,
+            )
+            sys.stdout.write(manifest.to_json())
+            return 0
     except (
         AcquisitionError,
         SnapshotError,
@@ -384,6 +446,7 @@ def main(argv: list[str] | None = None) -> int:
         SynthesisError,
         ResolutionError,
         PlanningError,
+        CompilationError,
     ) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
