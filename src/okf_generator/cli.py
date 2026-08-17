@@ -7,6 +7,7 @@ from pathlib import Path
 from .acquire import AcquisitionEngine, AcquisitionError, AcquisitionSpec, DEFAULT_MAX_HTTP_BYTES
 from .classify import ClassificationEngine, ClassificationError, RULESET_ID
 from .compile import PROFILE_ID as COMPILATION_PROFILE_ID, CompilationEngine, CompilationError
+from .structuralize import PROFILE_ID as STRUCTURALIZATION_PROFILE_ID, StructuralizationEngine, StructuralizationError
 from .extract import ExtractionEngine, ExtractionError, PROFILE_ID as EXTRACTION_PROFILE_ID
 from .normalize import NormalizationEngine, NormalizationError, PROFILE_ID as NORMALIZATION_PROFILE_ID
 from .plan import PROFILE_ID as PLANNING_PROFILE_ID, PlanningEngine, PlanningError
@@ -294,6 +295,26 @@ def build_parser() -> argparse.ArgumentParser:
     compile_cmd.add_argument("--resolution-profile", default=RESOLUTION_PROFILE_ID)
     compile_cmd.add_argument("--planning-profile", default=PLANNING_PROFILE_ID)
     compile_cmd.add_argument("--profile", default=COMPILATION_PROFILE_ID)
+    structuralize = subparsers.add_parser(
+        "structuralize",
+        help="Stage 10: project verified canonical state into the base LLM-Wiki/OKF structural IR",
+    )
+    structuralize.add_argument(
+        "--generation-id",
+        help="Exact Stage 09 generation; omit to select the atomically active generation",
+    )
+    structuralize.add_argument(
+        "--state-root",
+        type=Path,
+        default=Path(".okf-generator/state"),
+    )
+    structuralize.add_argument(
+        "--out",
+        type=Path,
+        default=Path(".okf-generator/structural"),
+    )
+    structuralize.add_argument("--profile", default=STRUCTURALIZATION_PROFILE_ID)
+
     return parser
 
 
@@ -437,6 +458,14 @@ def main(argv: list[str] | None = None) -> int:
             )
             sys.stdout.write(manifest.to_json())
             return 0
+        if args.command == "structuralize":
+            manifest = StructuralizationEngine(
+                state_root=args.state_root,
+                output_root=args.out,
+                profile=args.profile,
+            ).structuralize(args.generation_id)
+            sys.stdout.write(manifest.to_json())
+            return 0
     except (
         AcquisitionError,
         SnapshotError,
@@ -447,6 +476,7 @@ def main(argv: list[str] | None = None) -> int:
         ResolutionError,
         PlanningError,
         CompilationError,
+        StructuralizationError,
     ) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

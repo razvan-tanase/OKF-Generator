@@ -281,8 +281,31 @@ stages:
   - id: "10"
     name: structuralize
     purpose: Apply base LLM-Wiki and initial OKF structural conventions.
-    status: planned
+    status: complete
     deterministic: true
+    inputs:
+      - exact verified Stage 09 canonical generation, selected explicitly or from the atomic current pointer
+      - repository-pinned OKF v0.1 structural specification commit
+    outputs:
+      - .okf-generator/structural/<stage09-generation-id>/<profile>/sha256-<run>/structuralization.json
+      - .okf-generator/structural/<stage09-generation-id>/<profile>/sha256-<run>/documents.jsonl
+      - .okf-generator/structural/<stage09-generation-id>/<profile>/sha256-<run>/identity-map.json
+      - .okf-generator/structural/<stage09-generation-id>/<profile>/sha256-<run>/deferred.json
+      - workflow/structuralization.yaml
+      - workflow/tools/stage-10.yaml
+      - docs/stage-10-structuralize.md
+    completion_criteria:
+      - Stage 09 generation identity, hashes, counts, projections, registry, and cross-references are reverified
+      - every active canonical object projects to one typed structural OKF document
+      - canonical concept paths are preserved and non-concept paths are stable and collision-checked
+      - raw private internal identities remain outside public document frontmatter and paths
+      - merged/tombstoned objects remain represented in the private identity sidecar without public documents
+      - claim and relation links resolve through active public document paths
+      - index.md and log.md ownership remains deferred to Stage 13
+      - final Markdown/YAML serialization remains deferred to Stage 14
+      - OKFy and OpenWiki compatibility is evaluated against pinned versions without becoming runtime dependencies
+      - canonical state mutation during structuralization is detected before publication
+      - existing structural output is immutable and content-addressed
 
   - id: "11"
     name: migrate
