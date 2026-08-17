@@ -1,0 +1,30 @@
+stage: "08-plan"
+profile: builtin-v1
+
+tools:
+  selected:
+    - name: python-standard-library
+      role:
+        - canonical JSON
+        - SHA-256 content addressing
+        - Unicode NFC/casefold path policy
+        - deterministic planning and validation
+        - atomic filesystem publication
+      dependency_change: none
+  reused:
+    - name: Stage 06/07 internal verifiers
+      role:
+        - synthesis candidate verification
+        - resolution artifact and run-id verification
+  deferred:
+    - name: OpenAI adjudication
+      reason: builtin-v1 externalizes high-impact semantic choices into an explicit decision ledger rather than making hidden model calls
+    - name: vector databases / embedding frameworks
+      reason: planning consumes Stage 07 identity results; it does not repeat retrieval or identity matching
+    - name: OKF ecosystem tools
+      reason: Stage 08 is format-neutral change planning; first OKF-specific evaluation remains Stage 10 Structuralize
+
+selection_principles:
+  - do not add an orchestration layer that duplicates the project control plane
+  - contradiction, supersession, and canonical identity merge require explicit auditable decisions
+  - no new runtime dependency when the standard library is sufficient
