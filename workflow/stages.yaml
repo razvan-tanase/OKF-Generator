@@ -155,8 +155,32 @@ stages:
   - id: "06"
     name: synthesize
     purpose: Produce candidate concepts, claims, relations, and summaries.
-    status: planned
+    status: complete
     deterministic: false
+    inputs:
+      - verified Stage 05 normalization for the configured source/snapshot/ruleset/profiles
+      - explicit model identifier
+    outputs:
+      - .okf-generator/syntheses/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<provider>/sha256-<run>/synthesis.json
+      - .okf-generator/syntheses/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<provider>/sha256-<run>/requests.jsonl
+      - .okf-generator/syntheses/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<provider>/sha256-<run>/responses.jsonl
+      - .okf-generator/syntheses/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<provider>/sha256-<run>/receipts.jsonl
+      - .okf-generator/syntheses/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<provider>/sha256-<run>/candidates.jsonl
+      - workflow/synthesis.yaml
+      - workflow/tools/stage-06.yaml
+      - docs/stage-06-synthesize.md
+    completion_criteria:
+      - only verified Stage 05 normalized evidence is accepted
+      - prompt and candidate-schema versions and hashes are persisted
+      - complete normalized units are deterministically batched without silent truncation
+      - exact model requests, parsed structured responses, provider receipts, and candidates are immutable run artifacts
+      - every candidate cites only evidence anchors supplied in its own batch
+      - duplicate or unknown evidence anchors and invalid relation indices fail closed
+      - relation endpoints are translated from batch-local indices to workflow-owned local candidate IDs
+      - provider refusal, incomplete response, malformed output, and oversized single units fail without publication
+      - distinct model runs coexist as immutable content-addressed run directories
+      - mutation of Stage 05 evidence during synthesis is detected
+      - Stage 06 introduces no Stage 07 identity resolution or Stage 08 planning
 
   - id: "07"
     name: resolve

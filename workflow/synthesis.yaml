@@ -1,0 +1,65 @@
+stage: "06-synthesize"
+profile: "builtin-v1"
+deterministic: false
+
+input:
+  stage: "05-normalize"
+  verification: required
+
+orchestration:
+  prompt_version: "prompt-v1"
+  candidate_schema_version: "candidate-v1"
+  unit_order: preserve_stage_05_order
+  batching: greedy_complete_units
+  default_max_input_chars: 120000
+  default_max_batch_units: 50
+  default_max_output_tokens: 8000
+  truncate_units: false
+
+candidate_contract:
+  types:
+    - summary
+    - concept
+    - claim
+    - relation
+  evidence_required: true
+  evidence_must_exist_in_batch: true
+  relation_endpoints: batch_local_concepts
+  persistent_identity_assignment: forbidden
+
+publication:
+  mode: immutable_content_addressed_runs
+  run_id_basis:
+    - upstream_normalization_hashes
+    - prompt_and_schema_hashes
+    - provider_and_requested_model
+    - batching_configuration
+    - requests_hash
+    - responses_hash
+    - receipts_hash
+    - candidates_hash
+  files:
+    - synthesis.json
+    - requests.jsonl
+    - responses.jsonl
+    - receipts.jsonl
+    - candidates.jsonl
+
+failure_policy:
+  provider_refusal: fail_without_publish
+  provider_incomplete: fail_without_publish
+  malformed_schema: fail_without_publish
+  unknown_evidence_anchor: fail_without_publish
+  duplicate_evidence_anchor: fail_without_publish
+  invalid_relation_index: fail_without_publish
+  oversized_single_unit: fail_without_publish
+  upstream_mutation: fail_without_publish
+
+forbidden:
+  - resolve_against_existing_concepts
+  - persistent_wiki_identity_assignment
+  - create_update_merge_planning
+  - canonical_knowledge_state_mutation
+  - silent_evidence_truncation
+  - provider_web_or_file_search
+  - okf_serialization

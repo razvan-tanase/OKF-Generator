@@ -1,0 +1,39 @@
+stage: "06-synthesize"
+profile: "builtin-v1"
+
+tools:
+  - name: openai-responses-api
+    role: initial_llm_provider_adapter
+    selected: true
+    transport: https_stdlib
+    dependency_added: false
+    endpoint: /v1/responses
+    structured_output: strict_json_schema
+    response_storage_requested: false
+    model_selection: explicit_cli_argument
+    notes:
+      - OPENAI_API_KEY is read from the environment.
+      - The requested and provider-resolved model identifiers are recorded per run.
+      - A pinned model snapshot is preferred when available.
+      - No provider tools are enabled; Stage 05 evidence is the only synthesis context.
+      - The adapter performs no implicit retry; each provider call is explicit in run provenance.
+
+  - name: python-standard-library
+    role: orchestration_and_validation
+    selected: true
+    capabilities:
+      - canonical_json
+      - sha256
+      - deterministic_batching
+      - https_client
+      - atomic_filesystem_publish
+
+  - name: langchain_or_agent_framework
+    role: orchestration
+    selected: false
+    reason: The project control plane already owns batching, schema validation, evidence constraints, and provenance; another orchestration layer is unnecessary at this stage.
+
+  - name: vector_store_or_retrieval_framework
+    role: retrieval
+    selected: false
+    reason: Stage 06 is source-local synthesis. Retrieval against existing knowledge belongs to later resolution/query behavior.
