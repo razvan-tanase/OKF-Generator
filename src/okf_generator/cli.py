@@ -8,6 +8,7 @@ from .acquire import AcquisitionEngine, AcquisitionError, AcquisitionSpec, DEFAU
 from .classify import ClassificationEngine, ClassificationError, RULESET_ID
 from .extract import ExtractionEngine, ExtractionError, PROFILE_ID as EXTRACTION_PROFILE_ID
 from .normalize import NormalizationEngine, NormalizationError, PROFILE_ID as NORMALIZATION_PROFILE_ID
+from .plan import PROFILE_ID as PLANNING_PROFILE_ID, PlanningEngine, PlanningError
 from .resolve import (
     DEFAULT_SHORTLIST_LIMIT,
     DEFAULT_SIMILARITY_THRESHOLD,
@@ -213,6 +214,47 @@ def build_parser() -> argparse.ArgumentParser:
         "--adjudication-model",
         help="Optional explicit OpenAI model used only for unresolved/ambiguous identity adjudication",
     )
+
+    plan = subparsers.add_parser(
+        "plan",
+        help="Stage 08: convert resolution evidence into an immutable declarative change plan",
+    )
+    plan.add_argument("source_id")
+    plan.add_argument("snapshot_id")
+    plan.add_argument("synthesis_run_id")
+    plan.add_argument("resolution_run_id")
+    plan.add_argument("--synthesis-provider", default="openai")
+    plan.add_argument(
+        "--planning-state",
+        type=Path,
+        help="Optional read-only existing claims/relations projection",
+    )
+    plan.add_argument(
+        "--decisions",
+        type=Path,
+        help="Optional explicit semantic decision ledger",
+    )
+    plan.add_argument(
+        "--syntheses-root",
+        type=Path,
+        default=Path(".okf-generator/syntheses"),
+    )
+    plan.add_argument(
+        "--resolutions-root",
+        type=Path,
+        default=Path(".okf-generator/resolutions"),
+    )
+    plan.add_argument(
+        "--out",
+        type=Path,
+        default=Path(".okf-generator/plans"),
+    )
+    plan.add_argument("--ruleset", default=RULESET_ID)
+    plan.add_argument("--extraction-profile", default=EXTRACTION_PROFILE_ID)
+    plan.add_argument("--normalization-profile", default=NORMALIZATION_PROFILE_ID)
+    plan.add_argument("--synthesis-profile", default=SYNTHESIS_PROFILE_ID)
+    plan.add_argument("--resolution-profile", default=RESOLUTION_PROFILE_ID)
+    plan.add_argument("--profile", default=PLANNING_PROFILE_ID)
     return parser
 
 
@@ -311,6 +353,28 @@ def main(argv: list[str] | None = None) -> int:
             )
             sys.stdout.write(manifest.to_json())
             return 0
+        if args.command == "plan":
+            manifest = PlanningEngine(
+                synthesis_root=args.syntheses_root,
+                resolution_root=args.resolutions_root,
+                output_root=args.out,
+                ruleset=args.ruleset,
+                extraction_profile=args.extraction_profile,
+                normalization_profile=args.normalization_profile,
+                synthesis_profile=args.synthesis_profile,
+                resolution_profile=args.resolution_profile,
+                profile=args.profile,
+            ).plan(
+                args.source_id,
+                args.snapshot_id,
+                args.synthesis_run_id,
+                args.resolution_run_id,
+                synthesis_provider=args.synthesis_provider,
+                planning_state_path=args.planning_state,
+                decision_path=args.decisions,
+            )
+            sys.stdout.write(manifest.to_json())
+            return 0
     except (
         AcquisitionError,
         SnapshotError,
@@ -319,6 +383,7 @@ def main(argv: list[str] | None = None) -> int:
         NormalizationError,
         SynthesisError,
         ResolutionError,
+        PlanningError,
     ) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

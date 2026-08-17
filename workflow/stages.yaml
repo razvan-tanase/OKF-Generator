@@ -216,8 +216,31 @@ stages:
   - id: "08"
     name: plan
     purpose: Decide create, update, merge, contradict, supersede, or ignore operations.
-    status: planned
+    status: complete
     deterministic: mixed
+    inputs:
+      - exact verified Stage 07 resolution run and its bound Stage 06 synthesis candidates
+      - optional read-only planning-state v0.1 claims/relations projection
+      - optional explicit decision ledger v0.1
+    outputs:
+      - .okf-generator/plans/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/<resolution-run-id>/<planning-profile>/sha256-<run>/plan.json
+      - .okf-generator/plans/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/<resolution-run-id>/<planning-profile>/sha256-<run>/planning-state.json
+      - .okf-generator/plans/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/<resolution-run-id>/<planning-profile>/sha256-<run>/decisions.json
+      - .okf-generator/plans/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/<resolution-run-id>/<planning-profile>/sha256-<run>/operations.jsonl
+      - workflow/planning.yaml
+      - workflow/tools/stage-08.yaml
+      - docs/stage-08-plan.md
+    completion_criteria:
+      - Stage 07 artifact hashes and content-addressed run identity are reverified before planning
+      - the bound Stage 06 candidate graph and content-addressed synthesis run are reverified
+      - matched, new, and ambiguous concepts map conservatively to update, create, or ignore unless an explicit merge decision exists
+      - new objects receive deterministic provisional identities and collision-safe proposed concept paths
+      - exact existing and same-run duplicate claims, relations, concepts, and summaries are handled deterministically
+      - contradiction, supersession, and multi-identity merge require explicit auditable decisions
+      - relation endpoints are translated through the concept plan and unresolved endpoints become explicit ignore operations
+      - planning-state and decision-ledger mutation during planning is detected
+      - existing plan output is immutable and content-addressed
+      - Stage 08 mutates no canonical knowledge state and introduces no Stage 09 compilation
 
   - id: "09"
     name: compile

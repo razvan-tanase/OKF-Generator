@@ -1,0 +1,93 @@
+stage: "08-plan"
+profile: builtin-v1
+purpose: Convert one verified Stage 07 resolution run into an immutable declarative change plan without mutating canonical knowledge state.
+
+inputs:
+  resolution:
+    stage: "07-resolve"
+    selection:
+      - source_id
+      - snapshot_id
+      - synthesis_provider
+      - synthesis_run_id
+      - resolution_run_id
+    verification:
+      - verify Stage 07 artifact hashes
+      - rederive Stage 07 content-addressed run_id
+      - reverify the bound Stage 06 synthesis candidates and run identity
+  concept_catalog:
+    source: Stage 07 catalog.json snapshot
+    mutation: forbidden
+  planning_state:
+    schema_version: "0.1"
+    optional: true
+    omitted_behavior: explicit canonical empty claims/relations state
+    mutation: forbidden
+  decision_ledger:
+    schema_version: "0.1"
+    optional: true
+    omitted_behavior: explicit canonical empty decision ledger
+    mutation: forbidden
+
+operations:
+  - create
+  - update
+  - merge
+  - contradict
+  - supersede
+  - ignore
+
+policy:
+  matched_concept: update
+  new_concept: create-with-provisional-id-and-path
+  ambiguous_concept: ignore-unless-explicit-merge-decision
+  exact_existing_claim: update
+  new_claim: create
+  contradiction_or_supersession: explicit-decision-required
+  unresolved_relation_endpoint: ignore
+  lexical_or_semantic_guessing_for_high_impact_actions: forbidden
+
+provisional_identity:
+  basis: sha256-object-descriptor-v1
+  namespace: urn:okf-generator:<object-type>:sha256-<digest>
+  canonical_before_stage_09: false
+
+concept_path:
+  basis: unicode-nfc-casefold-alnum-v1
+  root: concepts/
+  reserves:
+    - current canonical paths
+    - path history
+  collision_behavior: deterministic digest suffix
+
+outputs:
+  root: .okf-generator/plans/<source-id>/<snapshot-id>/<ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/<resolution-run-id>/<planning-profile>/sha256-<run>/
+  files:
+    - plan.json
+    - planning-state.json
+    - decisions.json
+    - operations.jsonl
+
+determinism:
+  control_plane: byte-deterministic for fixed inputs/profile/runtime Unicode database
+  semantic_decisions: externalized into the immutable decision ledger
+  model_call_in_builtin_v1: false
+
+safety:
+  mutate_resolution_catalog: false
+  mutate_planning_state: false
+  allocate_canonical_identity: false
+  silently_resolve_ambiguity: false
+  infer_contradiction_or_supersession: false
+  stage_09_compilation: false
+
+failure_policy:
+  publication: atomic
+  overwrite: forbidden
+  fail_closed_on:
+    - Stage 07 hash or run-id inconsistency
+    - bound Stage 06 inconsistency
+    - malformed planning state
+    - malformed or stale decision target
+    - unresolved relation dependency
+    - mutable input change during planning
