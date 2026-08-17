@@ -1,0 +1,29 @@
+stage: "05-normalize"
+audited_for_stage: true
+
+selected:
+  - tool: Python standard library
+    role:
+      - Unicode NFC normalization via unicodedata
+      - canonical JSON serialization
+      - SHA-256 source-anchor and content fingerprints
+      - workflow-local URI escaping
+      - atomic filesystem publication
+    decision: use
+    rationale: The stage requires deterministic representation canonicalization, not semantic interpretation.
+
+not_selected:
+  - category: ICU / locale-sensitive normalization libraries
+    decision: defer
+    rationale: Locale-sensitive transformations are unnecessary for NFC canonicalization and could broaden the semantic surface.
+  - category: transliteration libraries
+    decision: reject-for-stage
+    rationale: Transliteration is lossy and would alter source evidence.
+  - category: tokenizers / NLP pipelines
+    decision: defer-to-later-stages
+    rationale: Tokenization, linguistic normalization, and semantic segmentation belong after evidence normalization.
+  - category: LLM normalization
+    decision: reject-for-stage
+    rationale: Stage 05 must be fully deterministic and must not invent or rewrite semantics.
+
+new_runtime_dependencies: []

@@ -128,8 +128,29 @@ stages:
   - id: "05"
     name: normalize
     purpose: Canonicalize extracted text, metadata, anchors, and source identifiers.
-    status: planned
+    status: complete
     deterministic: true
+    inputs:
+      - verified Stage 04 extraction for the configured source/snapshot/ruleset/profile
+    outputs:
+      - .okf-generator/normalized/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/normalization.json
+      - .okf-generator/normalized/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/units.jsonl
+      - workflow/normalization.yaml
+      - workflow/tools/stage-05.yaml
+      - docs/stage-05-normalize.md
+    completion_criteria:
+      - only verified Stage 04 extraction outputs are normalized
+      - extraction manifest hash, units hash, unit count, diagnostic count, and unit schema are validated
+      - text normalization is limited to Unicode NFC and LF line-ending canonicalization
+      - spaces, tabs, blank lines, leading/trailing whitespace, and terminal newlines are preserved
+      - JSON data, native locators, metadata, and diagnostics are NFC-canonicalized without list reordering
+      - non-finite numbers, Unicode surrogate values, NFC key collisions, and normalized path collisions are rejected
+      - logical source URI and immutable source-version URI are deterministic
+      - native-locator anchors are independent of Stage 04 sequence IDs and collisions are rejected
+      - normalized unit content receives a deterministic SHA-256 fingerprint
+      - existing normalized output is never overwritten and repeat runs are byte-idempotent
+      - mutation of Stage 04 evidence during normalization is detected
+      - Stage 05 introduces no semantic chunking, synthesis, or OKF serialization
 
   - id: "06"
     name: synthesize
