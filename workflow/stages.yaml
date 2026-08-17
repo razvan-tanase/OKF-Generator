@@ -245,8 +245,38 @@ stages:
   - id: "09"
     name: compile
     purpose: Apply accepted changes to the canonical internal knowledge state.
-    status: planned
+    status: complete
     deterministic: true
+    inputs:
+      - exact verified Stage 08 plan run and its bound Stage 07/06 evidence chain
+      - active canonical state generation when current.json exists
+    outputs:
+      - .okf-generator/state/current.json
+      - .okf-generator/state/generations/sha256-<generation>/state.json
+      - .okf-generator/state/generations/sha256-<generation>/concepts.jsonl
+      - .okf-generator/state/generations/sha256-<generation>/summaries.jsonl
+      - .okf-generator/state/generations/sha256-<generation>/claims.jsonl
+      - .okf-generator/state/generations/sha256-<generation>/relations.jsonl
+      - .okf-generator/state/generations/sha256-<generation>/identity-registry.json
+      - .okf-generator/state/generations/sha256-<generation>/events.jsonl
+      - .okf-generator/state/generations/sha256-<generation>/resolution-catalog.json
+      - .okf-generator/state/generations/sha256-<generation>/planning-state.json
+      - workflow/compilation.yaml
+      - workflow/tools/stage-09.yaml
+      - docs/stage-09-compile.md
+    completion_criteria:
+      - Stage 08 artifact hashes and content-addressed plan identity are reverified before compilation
+      - the bound Stage 07 resolution and Stage 06 synthesis are reverified
+      - a plan whose catalog/planning-state base differs from current canonical projections is rejected as stale
+      - Stage 08 provisional identities are deterministically finalized without reallocating existing identities
+      - create, update, merge, contradict, supersede, and ignore operations are applied under object-type-specific constraints
+      - concept merges preserve title/path/alias/source history and rewrite active relation endpoints
+      - claim contradiction and supersession relationships are stored reciprocally and merge references are rewritten
+      - every planned operation appends an auditable event, including ignore operations
+      - generated Stage 07/08 projections are deterministic functions of canonical state
+      - immutable generations are content-addressed and current.json switches atomically only after full validation
+      - active-plan replay is idempotent only when provenance hashes match and ancestor-plan replay is rejected
+      - Stage 09 introduces no Stage 10 structuralization or OKF serialization
 
   - id: "10"
     name: structuralize

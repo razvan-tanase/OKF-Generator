@@ -1,0 +1,33 @@
+stage: "09-compile"
+profile: builtin-v1
+
+selected:
+  - tool: Python standard library json
+    purpose: Canonical state, manifest, registry, projection, and event serialization.
+  - tool: Python standard library hashlib
+    purpose: Final identity, event, file, generation, and pointer integrity hashes.
+  - tool: Python standard library filesystem primitives
+    modules:
+      - pathlib
+      - tempfile
+      - os
+      - shutil
+    purpose: Immutable generation publication and atomic current-pointer replacement.
+  - tool: OS advisory locking through Python standard library
+    implementations:
+      - fcntl on POSIX
+      - msvcrt fallback on Windows
+    purpose: Serialize Stage 09 canonical-state activation without a new dependency.
+
+not_selected:
+  - tool_category: database/transaction engine
+    reason: Immutable generations plus one atomic pointer provide the required Stage 09 transaction boundary without introducing storage semantics not yet needed.
+  - tool_category: LLM or agent framework
+    reason: Stage 08 already made semantic decisions; Stage 09 must apply them deterministically.
+  - tool_category: OKF ecosystem tooling
+    reason: Stage 09 remains format-neutral canonical-state compilation; OKF structure begins at Stage 10.
+  - tool_category: vector database or embeddings
+    reason: Identity resolution and semantic planning occur in earlier stages.
+
+runtime_dependencies_added: []
+first_okf_ecosystem_evaluation_remains: "10-structuralize"

@@ -1,0 +1,103 @@
+stage: "09-compile"
+profile: builtin-v1
+purpose: Atomically apply one verified Stage 08 change plan to canonical internal knowledge state.
+
+inputs:
+  plan:
+    stage: "08-plan"
+    selection:
+      - source_id
+      - snapshot_id
+      - synthesis_provider
+      - synthesis_run_id
+      - resolution_run_id
+      - plan_run_id
+    verification:
+      - verify Stage 08 operations hash, counts, schema, and dependency order
+      - rederive Stage 08 content-addressed plan_run_id
+      - verify embedded planning-state and decision snapshots
+      - reverify the bound Stage 07 resolution and Stage 06 synthesis
+  canonical_state:
+    root: .okf-generator/state
+    omitted_behavior: bootstrap from exact Stage 07 catalog + Stage 08 planning-state snapshots
+    mutation_boundary: current.json only
+
+identity:
+  provisional_to_final_basis: stage09-final-id-v1
+  allocation:
+    - create
+    - contradict
+    - supersede
+  existing_ids_preserved: true
+  concept_paths_frozen_on_update: true
+
+operations:
+  concept:
+    - create
+    - update
+    - merge
+    - ignore
+  summary:
+    - create
+    - merge
+    - ignore
+  claim:
+    - create
+    - update
+    - merge
+    - contradict
+    - supersede
+    - ignore
+  relation:
+    - create
+    - update
+    - merge
+    - ignore
+
+persistent_state:
+  semantic:
+    - concepts.jsonl
+    - summaries.jsonl
+    - claims.jsonl
+    - relations.jsonl
+  identity_registry: identity-registry.json
+  history: events.jsonl
+  projections:
+    - resolution-catalog.json
+    - planning-state.json
+
+publication:
+  generations: .okf-generator/state/generations/sha256-<generation>/
+  current_pointer: .okf-generator/state/current.json
+  generation_mutability: immutable
+  pointer_update: atomic-replace
+  compiler_coordination: advisory-file-lock
+
+concurrency:
+  stale_plan_guard:
+    - Stage 07 catalog snapshot must equal current resolution-catalog projection
+    - Stage 08 planning-state snapshot must equal current planning-state projection
+  recheck_current_before_activation: true
+  ancestor_plan_replay: reject
+  active_plan_replay: idempotent only when plan hashes match
+
+safety:
+  model_calls: false
+  new_semantic_decisions: false
+  stage_10_structuralization: false
+  okf_serialization: false
+  partial_current_state_mutation: false
+
+failure_policy:
+  fail_closed_on:
+    - Stage 08 run-id or artifact inconsistency
+    - Stage 07/06 binding inconsistency
+    - malformed operation or forward dependency
+    - stale canonical projection
+    - provisional/final identity collision
+    - invalid merge survivor or target
+    - relation endpoint not resolving to active concept
+    - canonical/history concept path collision
+    - canonical state or current-pointer integrity failure
+    - upstream mutation during compilation
+  prior_current_pointer_remains_authoritative: true
