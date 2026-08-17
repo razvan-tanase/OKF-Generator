@@ -6,7 +6,8 @@ from pathlib import Path
 
 from .acquire import AcquisitionEngine, AcquisitionError, AcquisitionSpec, DEFAULT_MAX_HTTP_BYTES
 from .classify import ClassificationEngine, ClassificationError, RULESET_ID
-from .extract import ExtractionEngine, ExtractionError, PROFILE_ID
+from .extract import ExtractionEngine, ExtractionError, PROFILE_ID as EXTRACTION_PROFILE_ID
+from .normalize import NormalizationEngine, NormalizationError, PROFILE_ID as NORMALIZATION_PROFILE_ID
 from .snapshot import SnapshotEngine, SnapshotError
 
 
@@ -82,7 +83,37 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path(".okf-generator/extractions"),
     )
     extract.add_argument("--ruleset", default=RULESET_ID)
-    extract.add_argument("--profile", default=PROFILE_ID)
+    extract.add_argument("--profile", default=EXTRACTION_PROFILE_ID)
+
+    normalize = subparsers.add_parser(
+        "normalize",
+        help="Stage 05: canonicalize verified Stage 04 source units without semantic synthesis",
+    )
+    normalize.add_argument("source_id")
+    normalize.add_argument("snapshot_id")
+    normalize.add_argument(
+        "--snapshots-root",
+        type=Path,
+        default=Path(".okf-generator/snapshots"),
+    )
+    normalize.add_argument(
+        "--classifications-root",
+        type=Path,
+        default=Path(".okf-generator/classifications"),
+    )
+    normalize.add_argument(
+        "--extractions-root",
+        type=Path,
+        default=Path(".okf-generator/extractions"),
+    )
+    normalize.add_argument(
+        "--out",
+        type=Path,
+        default=Path(".okf-generator/normalized"),
+    )
+    normalize.add_argument("--ruleset", default=RULESET_ID)
+    normalize.add_argument("--extraction-profile", default=EXTRACTION_PROFILE_ID)
+    normalize.add_argument("--profile", default=NORMALIZATION_PROFILE_ID)
     return parser
 
 
@@ -129,7 +160,19 @@ def main(argv: list[str] | None = None) -> int:
             ).extract(args.source_id, args.snapshot_id)
             sys.stdout.write(manifest.to_json())
             return 0
-    except (AcquisitionError, SnapshotError, ClassificationError, ExtractionError) as exc:
+        if args.command == "normalize":
+            manifest = NormalizationEngine(
+                snapshot_root=args.snapshots_root,
+                classification_root=args.classifications_root,
+                extraction_root=args.extractions_root,
+                output_root=args.out,
+                ruleset=args.ruleset,
+                extraction_profile=args.extraction_profile,
+                profile=args.profile,
+            ).normalize(args.source_id, args.snapshot_id)
+            sys.stdout.write(manifest.to_json())
+            return 0
+    except (AcquisitionError, SnapshotError, ClassificationError, ExtractionError, NormalizationError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     return 2

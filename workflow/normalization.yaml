@@ -1,0 +1,74 @@
+stage: "05-normalize"
+schema_version: "0.1"
+profile: "builtin-v1"
+deterministic: true
+
+input:
+  extraction:
+    path: .okf-generator/extractions/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/
+    required_files:
+      - extraction.json
+      - units.jsonl
+    verification:
+      - rerun Stage 04 verification before normalization
+      - extraction identity fields must match the requested source/snapshot/ruleset/profile
+      - units SHA-256 must match extraction.json
+      - unit_count and diagnostic_count must match extraction evidence
+      - rerun Stage 04 verification after normalization before publication
+
+text_policy:
+  id: unicode-nfc+lf-v1
+  unicode: NFC
+  line_endings: LF
+  preserve:
+    - spaces
+    - tabs
+    - blank lines
+    - leading and trailing whitespace
+    - terminal newlines
+  reject:
+    - unpaired Unicode surrogates
+
+structured_value_policy:
+  strings_and_object_keys: Unicode NFC
+  list_order: preserve
+  finite_numbers_only: true
+  nfc_key_collisions: reject
+  unknown_stage04_unit_fields: reject
+  normalized_source_path_collisions: reject
+
+identity:
+  logical_source_uri: okf-source:<source-id>
+  source_version_uri: okf-source:<source-id>@<snapshot-id>
+  anchor_basis: native-locator-v1
+  anchor_descriptor:
+    - normalized source_path
+    - unit kind
+    - normalized native_locator
+  anchor_id: a-sha256-<sha256(canonical-anchor-descriptor)>
+  duplicate_anchors: reject
+  extraction_unit_id:
+    preserved: true
+    participates_in_anchor: false
+
+output:
+  root: .okf-generator/normalized/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<profile>/
+  files:
+    - normalization.json
+    - units.jsonl
+  immutable: true
+  replace_supported: false
+  canonical_json:
+    sort_keys: true
+    ensure_ascii: true
+    allow_nan: false
+
+forbidden:
+  - whitespace collapsing or trimming
+  - semantic chunking
+  - stemming or translation
+  - entity or claim extraction
+  - inferred metadata
+  - summarization
+  - concept resolution
+  - OKF serialization
