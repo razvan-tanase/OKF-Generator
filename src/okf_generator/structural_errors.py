@@ -1,0 +1,2 @@
+class StructuralizationError(RuntimeError):
+    pass

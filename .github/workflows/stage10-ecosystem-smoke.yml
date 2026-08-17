@@ -1,0 +1,44 @@
+name: Stage 10 ecosystem smoke
+
+on:
+  pull_request:
+    paths:
+      - "src/okf_generator/structural*.py"
+      - "tests/generate_stage10_ecosystem_fixture.py"
+      - "tests/openwiki_native_probe.mjs"
+      - "tests/structural_test_support.py"
+      - ".github/workflows/stage10-ecosystem-smoke.yml"
+      - "workflow/tools/stage-10.yaml"
+
+permissions:
+  contents: read
+
+jobs:
+  ecosystem-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Generate Stage 10 materialized test bundle
+        run: |
+          python tests/generate_stage10_ecosystem_fixture.py "$RUNNER_TEMP/stage10-okf-bundle"
+      - name: Install pinned ecosystem packages
+        run: |
+          mkdir -p "$RUNNER_TEMP/stage10-node"
+          cd "$RUNNER_TEMP/stage10-node"
+          npm init -y
+          npm install --no-save --ignore-scripts okfy-ai@0.3.5 openwiki@0.3.3
+      - name: Run OKFy native validation
+        run: |
+          cd "$RUNNER_TEMP/stage10-node"
+          ./node_modules/.bin/okfy validate "$RUNNER_TEMP/stage10-okf-bundle"
+      - name: Run OpenWiki native frontmatter validation
+        run: |
+          cd "$RUNNER_TEMP/stage10-node"
+          node "$GITHUB_WORKSPACE/tests/openwiki_native_probe.mjs" "$RUNNER_TEMP/stage10-okf-bundle"

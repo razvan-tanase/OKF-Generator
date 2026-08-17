@@ -1,0 +1,50 @@
+stage: "10-structuralize"
+policy: Evaluate OKF ecosystem tools only for Stage 10 structural compatibility; do not adopt them as pipeline owners.
+
+tools:
+  - name: OKFy
+    repository: https://github.com/0dust/OKFy
+    source_commit: c73caa4fb7fdb0e2a6f69f2c677a4b632df4b226
+    package: okfy-ai
+    package_version: 0.3.5
+    role: independent-structural-validator
+    runtime_dependency: false
+    local_native_execution:
+      attempted: true
+      result: blocked-by-environment
+      detail: npm registry DNS resolution returned EAI_AGAIN
+    local_evaluation:
+      mode: pinned-source-contract-replay
+      validator_focus:
+        - required non-empty concept type
+        - reserved index.md/log.md structure
+        - OKF v0.1 root version declaration in test materialization
+        - resolvable internal links
+    native_ci:
+      workflow: .github/workflows/stage10-ecosystem-smoke.yml
+      command: ./node_modules/.bin/okfy validate <generated-fixture>
+
+  - name: OpenWiki
+    repository: https://github.com/langchain-ai/openwiki
+    source_commit: 79dd5fc2b3561c723c9abcfadb5359a0234f1221
+    package: openwiki
+    package_version: 0.3.3
+    role: producer-design-reference-and-frontmatter-consumer
+    runtime_dependency: false
+    local_native_execution:
+      attempted: true
+      result: blocked-by-environment
+      detail: npm registry DNS resolution returned EAI_AGAIN
+    local_evaluation:
+      mode: pinned-source-contract-replay
+      validator_focus:
+        - required non-empty type
+        - optional string field shapes
+        - extension tolerance
+    native_ci:
+      workflow: .github/workflows/stage10-ecosystem-smoke.yml
+      command: execute published validateOkfFrontmatter over generated concept pages
+
+selection:
+  accepted_runtime_dependency: none
+  reason: Stage 10 control plane can express the pinned base structural contract deterministically; ecosystem tools remain independent compatibility probes.

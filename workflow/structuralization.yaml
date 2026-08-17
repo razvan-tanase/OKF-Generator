@@ -1,0 +1,63 @@
+stage: "10-structuralize"
+profile: builtin-v1
+purpose: Project verified canonical state into a deterministic base LLM-Wiki / OKF v0.1 structural IR without final Markdown/YAML serialization.
+
+inputs:
+  canonical_state:
+    stage: "09-compile"
+    selection:
+      - optional explicit generation_id
+      - otherwise atomically active current.json generation
+    verification:
+      - verify Stage 09 generation content address and state manifest
+      - verify all canonical object/artifact hashes and counts
+      - verify identity registry and Stage 07/08 projections
+      - verify canonical cross-references
+
+okf_baseline:
+  version: "0.1"
+  specification_commit: "ee67a5ca27044ebe7c38385f5b6cffc2305a9c1a"
+  required_frontmatter:
+    - type
+  optional_projected_frontmatter:
+    - title
+    - description
+  reserved_paths:
+    - index.md
+    - log.md
+
+projection:
+  active_object_types:
+    concept: Concept
+    summary: Summary
+    claim: Claim
+    relation: Relation
+  concept_path_source: Stage 09 canonical_path
+  auxiliary_path_basis: stable-private-id-sha256-prefix-v1
+  merged_objects_emit_public_document: false
+  private_identity_sidecar: identity-map.json
+  final_markdown_yaml_serialization: forbidden
+  index_log_derivation: forbidden
+
+outputs:
+  root: .okf-generator/structural/<stage09-generation-id>/<profile>/sha256-<run>/
+  files:
+    - structuralization.json
+    - documents.jsonl
+    - identity-map.json
+    - deferred.json
+
+stage_ownership:
+  index.md: 13-derive
+  log.md: 13-derive
+  markdown_yaml_serialization: 14-serialize
+
+failure_policy:
+  publication: atomic
+  overwrite: forbidden
+  fail_closed_on:
+    - invalid or mutating Stage 09 generation
+    - unsafe/reserved/colliding public paths
+    - invalid merge target
+    - active relation without active public endpoints
+    - existing run mismatch
