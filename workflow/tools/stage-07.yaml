@@ -1,0 +1,37 @@
+stage: "07-resolve"
+profile: builtin-v1
+
+decision: reuse-standard-library-and-existing-stage06-provider
+
+selected:
+  - tool: Python standard library
+    role:
+      - canonical JSON and SHA-256
+      - Unicode/case normalization
+      - deterministic tokenization and lexical similarity
+      - path validation
+      - atomic publication
+    new_dependency: false
+  - tool: existing Stage 06 OpenAI Responses API adapter
+    role:
+      - optional adjudication only for unresolved deterministic shortlists
+    new_dependency: false
+    invocation_requires:
+      - explicit adjudication model
+      - OPENAI_API_KEY at runtime
+
+not_selected:
+  - tool: OKF ecosystem tools
+    reason: Stage 07 operates on internal candidate identities before OKF structuralization; first OKF-specific tool evaluation remains Stage 10.
+  - tool: vector database
+    reason: no persistent ANN index is required for the builtin-v1 catalog scale/contract; it would add state outside the deterministic control plane.
+  - tool: embedding framework
+    reason: approximate similarity is only a shortlist signal and may not auto-merge identities; deterministic lexical scoring is sufficient for the base profile.
+  - tool: LangChain or agent framework
+    reason: resolution ordering, shortlist authority, adjudication schema, and provenance are owned directly by the Stage 07 control plane.
+
+constraints:
+  - model output never directly mutates canonical state
+  - model match must select from deterministic shortlist
+  - no external retrieval during adjudication
+  - no implicit model call when adjudication model is absent

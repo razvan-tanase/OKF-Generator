@@ -1,0 +1,83 @@
+stage: "07-resolve"
+profile: builtin-v1
+purpose: Match Stage 06 concept candidates against read-only existing concept identities without mutating canonical state.
+
+inputs:
+  synthesis:
+    stage: "06-synthesize"
+    selection:
+      - source_id
+      - snapshot_id
+      - synthesis_provider
+      - synthesis_run_id
+    verification:
+      - verify every Stage 06 run artifact hash
+      - rederive the Stage 06 content-addressed run_id
+      - validate candidate schema, counts, unique candidate IDs, and relation endpoints
+  catalog:
+    schema_version: "0.1"
+    optional: true
+    omitted_behavior: explicit canonical empty catalog
+    mutation: forbidden
+  adjudication:
+    optional: true
+    requires_explicit_model: true
+
+catalog_concept_fields:
+  - internal_id
+  - title
+  - description
+  - canonical_path
+  - aliases
+  - title_history
+  - path_history
+  - resource_uris
+  - source_anchors
+  - status
+
+matching_priority:
+  - source-anchor-plus-name
+  - resource-uri-plus-name
+  - alias-title-history-exact
+  - current-title-path-exact
+  - deterministic-lexical-shortlist
+  - optional-adjudication
+  - preserve-ambiguity
+
+safety:
+  anchor_or_resource_overlap_alone_can_merge: false
+  lexical_similarity_can_auto_merge: false
+  allocate_internal_ids: false
+  mutate_catalog: false
+  stage_08_planning: false
+  stage_09_compilation: false
+
+outputs:
+  root: .okf-generator/resolutions/<source-id>/<snapshot-id>/<ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/sha256-<run>/
+  files:
+    - resolution.json
+    - catalog.json
+    - resolutions.jsonl
+    - adjudication-requests.jsonl
+    - adjudication-responses.jsonl
+    - adjudication-receipts.jsonl
+
+statuses:
+  - matched
+  - new
+  - ambiguous
+
+determinism:
+  without_adjudication: byte-deterministic for fixed inputs/profile/thresholds
+  with_adjudication: deterministic orchestration with content-addressed nondeterministic result preservation
+
+failure_policy:
+  publication: atomic
+  overwrite: forbidden
+  fail_closed_on:
+    - Stage 06 hash or run-id inconsistency
+    - malformed candidate graph
+    - malformed or mutating catalog
+    - unsafe path identifiers
+    - adjudicator selecting outside shortlist
+    - upstream mutation during resolution

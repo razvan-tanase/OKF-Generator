@@ -8,6 +8,14 @@ from .acquire import AcquisitionEngine, AcquisitionError, AcquisitionSpec, DEFAU
 from .classify import ClassificationEngine, ClassificationError, RULESET_ID
 from .extract import ExtractionEngine, ExtractionError, PROFILE_ID as EXTRACTION_PROFILE_ID
 from .normalize import NormalizationEngine, NormalizationError, PROFILE_ID as NORMALIZATION_PROFILE_ID
+from .resolve import (
+    DEFAULT_SHORTLIST_LIMIT,
+    DEFAULT_SIMILARITY_THRESHOLD,
+    PROFILE_ID as RESOLUTION_PROFILE_ID,
+    OpenAIResolutionAdjudicator,
+    ResolutionEngine,
+    ResolutionError,
+)
 from .snapshot import SnapshotEngine, SnapshotError
 from .synthesize import (
     DEFAULT_MAX_BATCH_UNITS,
@@ -166,6 +174,45 @@ def build_parser() -> argparse.ArgumentParser:
     synthesize.add_argument("--max-input-chars", type=int, default=DEFAULT_MAX_INPUT_CHARS)
     synthesize.add_argument("--max-batch-units", type=int, default=DEFAULT_MAX_BATCH_UNITS)
     synthesize.add_argument("--max-output-tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS)
+
+    resolve = subparsers.add_parser(
+        "resolve",
+        help="Stage 07: match Stage 06 concept candidates against a read-only identity catalog",
+    )
+    resolve.add_argument("source_id")
+    resolve.add_argument("snapshot_id")
+    resolve.add_argument("synthesis_run_id")
+    resolve.add_argument("--synthesis-provider", default="openai")
+    resolve.add_argument(
+        "--catalog",
+        type=Path,
+        help="Read-only resolution catalog; omit for an explicit empty first-run catalog",
+    )
+    resolve.add_argument(
+        "--syntheses-root",
+        type=Path,
+        default=Path(".okf-generator/syntheses"),
+    )
+    resolve.add_argument(
+        "--out",
+        type=Path,
+        default=Path(".okf-generator/resolutions"),
+    )
+    resolve.add_argument("--ruleset", default=RULESET_ID)
+    resolve.add_argument("--extraction-profile", default=EXTRACTION_PROFILE_ID)
+    resolve.add_argument("--normalization-profile", default=NORMALIZATION_PROFILE_ID)
+    resolve.add_argument("--synthesis-profile", default=SYNTHESIS_PROFILE_ID)
+    resolve.add_argument("--profile", default=RESOLUTION_PROFILE_ID)
+    resolve.add_argument(
+        "--similarity-threshold",
+        type=float,
+        default=DEFAULT_SIMILARITY_THRESHOLD,
+    )
+    resolve.add_argument("--shortlist-limit", type=int, default=DEFAULT_SHORTLIST_LIMIT)
+    resolve.add_argument(
+        "--adjudication-model",
+        help="Optional explicit OpenAI model used only for unresolved/ambiguous identity adjudication",
+    )
     return parser
 
 
@@ -241,6 +288,29 @@ def main(argv: list[str] | None = None) -> int:
             ).synthesize(args.source_id, args.snapshot_id, model=args.model)
             sys.stdout.write(manifest.to_json())
             return 0
+        if args.command == "resolve":
+            adjudicator = OpenAIResolutionAdjudicator() if args.adjudication_model else None
+            manifest = ResolutionEngine(
+                synthesis_root=args.syntheses_root,
+                output_root=args.out,
+                ruleset=args.ruleset,
+                extraction_profile=args.extraction_profile,
+                normalization_profile=args.normalization_profile,
+                synthesis_profile=args.synthesis_profile,
+                profile=args.profile,
+                similarity_threshold=args.similarity_threshold,
+                shortlist_limit=args.shortlist_limit,
+                adjudicator=adjudicator,
+            ).resolve(
+                args.source_id,
+                args.snapshot_id,
+                args.synthesis_run_id,
+                synthesis_provider=args.synthesis_provider,
+                catalog_path=args.catalog,
+                adjudication_model=args.adjudication_model,
+            )
+            sys.stdout.write(manifest.to_json())
+            return 0
     except (
         AcquisitionError,
         SnapshotError,
@@ -248,6 +318,7 @@ def main(argv: list[str] | None = None) -> int:
         ExtractionError,
         NormalizationError,
         SynthesisError,
+        ResolutionError,
     ) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

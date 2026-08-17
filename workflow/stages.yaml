@@ -185,8 +185,33 @@ stages:
   - id: "07"
     name: resolve
     purpose: Match candidates against existing concept identities.
-    status: planned
+    status: complete
     deterministic: mixed
+    inputs:
+      - exact verified Stage 06 synthesis run selected by source/snapshot/provider/run_id
+      - optional read-only resolution catalog; omitted catalog means explicit empty first-run catalog
+      - optional explicit adjudication model
+    outputs:
+      - .okf-generator/resolutions/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/sha256-<run>/resolution.json
+      - .okf-generator/resolutions/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/sha256-<run>/catalog.json
+      - .okf-generator/resolutions/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/sha256-<run>/resolutions.jsonl
+      - .okf-generator/resolutions/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/sha256-<run>/adjudication-requests.jsonl
+      - .okf-generator/resolutions/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/sha256-<run>/adjudication-responses.jsonl
+      - .okf-generator/resolutions/<source-id>/<snapshot-id>/<classification-ruleset>/<extraction-profile>/<normalization-profile>/<synthesis-profile>/<synthesis-provider>/<synthesis-run-id>/<resolution-profile>/sha256-<run>/adjudication-receipts.jsonl
+      - workflow/resolution.yaml
+      - workflow/tools/stage-07.yaml
+      - docs/stage-07-resolve.md
+    completion_criteria:
+      - Stage 06 artifact hashes and content-addressed run identity are reverified before resolution
+      - only concept candidates are identity-resolved; summaries, claims, and relations remain Stage 06 candidates
+      - missing catalog is an explicit empty first-run catalog and does not allocate identities
+      - catalog internal IDs and normalized canonical paths are unique and catalog mutation is detected
+      - source-anchor/resource overlap is only identity evidence when corroborated by compatible name identity
+      - exact alias/history and title/path matches can resolve deterministically
+      - lexical similarity produces a shortlist but never auto-merges an identity
+      - optional adjudication can only choose from the deterministic shortlist, declare new, or preserve ambiguity
+      - deterministic and adjudicated outputs are preserved as immutable content-addressed runs
+      - Stage 07 never mutates the identity catalog or canonical state and introduces no Stage 08 planning
 
   - id: "08"
     name: plan
