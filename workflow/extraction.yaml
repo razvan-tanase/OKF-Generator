@@ -1,0 +1,52 @@
+stage: "04"
+name: extract
+profile: builtin-v1
+status: complete
+input:
+  snapshot_stage: "02-snapshot"
+  classification_stage: "03-classify"
+  classification_ruleset: builtin-v1
+output:
+  root: .okf-generator/extractions
+  layout: <source-id>/<snapshot-id>/<classification-ruleset>/<profile>
+  files:
+    - extraction.json
+    - units.jsonl
+invariants:
+  - verify Stage 03 before extraction
+  - reverify Stage 03 after extraction
+  - bind output to SHA-256 of snapshot.json and classification.json
+  - preserve native locators and unnormalized extracted text
+  - never dereference symlinks
+  - unsupported routes must emit explicit diagnostics
+  - existing output for the same snapshot/ruleset/profile is immutable
+  - behavior changes require a new extraction profile
+limits:
+  text_bytes: 268435456
+  pdf_bytes: 536870912
+  pdf_pages: 10000
+  pdf_text_chars: 268435456
+  archive_members: 20000
+  archive_member_bytes: 67108864
+  archive_total_uncompressed_bytes: 536870912
+  git_tree_entries: 100000
+  git_blob_bytes: 67108864
+  git_total_blob_bytes: 536870912
+  git_timeout_seconds: 60
+supported:
+  text_routes: [text, markdown, markup, structured-text, text-source]
+  pdf: [pdf]
+  office: [docx, pptx, xlsx, odt, ods, odp]
+  archive_document: [epub]
+  archive: [zip, tar, gzip, bzip2, xz]
+  repository: [git]
+explicitly_unsupported:
+  - image OCR
+  - audio transcription
+  - video transcription
+  - sqlite semantic extraction
+  - parquet semantic extraction
+  - legacy binary Office
+  - rtf
+  - rar
+  - 7z
