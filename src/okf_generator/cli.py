@@ -9,6 +9,14 @@ from .classify import ClassificationEngine, ClassificationError, RULESET_ID
 from .extract import ExtractionEngine, ExtractionError, PROFILE_ID as EXTRACTION_PROFILE_ID
 from .normalize import NormalizationEngine, NormalizationError, PROFILE_ID as NORMALIZATION_PROFILE_ID
 from .snapshot import SnapshotEngine, SnapshotError
+from .synthesize import (
+    DEFAULT_MAX_BATCH_UNITS,
+    DEFAULT_MAX_INPUT_CHARS,
+    DEFAULT_MAX_OUTPUT_TOKENS,
+    PROFILE_ID as SYNTHESIS_PROFILE_ID,
+    SynthesisEngine,
+    SynthesisError,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -114,6 +122,50 @@ def build_parser() -> argparse.ArgumentParser:
     normalize.add_argument("--ruleset", default=RULESET_ID)
     normalize.add_argument("--extraction-profile", default=EXTRACTION_PROFILE_ID)
     normalize.add_argument("--profile", default=NORMALIZATION_PROFILE_ID)
+
+    synthesize = subparsers.add_parser(
+        "synthesize",
+        help="Stage 06: produce evidence-grounded candidate knowledge from verified normalized units",
+    )
+    synthesize.add_argument("source_id")
+    synthesize.add_argument("snapshot_id")
+    synthesize.add_argument(
+        "--model",
+        required=True,
+        help="Explicit provider model identifier; use a pinned snapshot when available",
+    )
+    synthesize.add_argument(
+        "--snapshots-root",
+        type=Path,
+        default=Path(".okf-generator/snapshots"),
+    )
+    synthesize.add_argument(
+        "--classifications-root",
+        type=Path,
+        default=Path(".okf-generator/classifications"),
+    )
+    synthesize.add_argument(
+        "--extractions-root",
+        type=Path,
+        default=Path(".okf-generator/extractions"),
+    )
+    synthesize.add_argument(
+        "--normalized-root",
+        type=Path,
+        default=Path(".okf-generator/normalized"),
+    )
+    synthesize.add_argument(
+        "--out",
+        type=Path,
+        default=Path(".okf-generator/syntheses"),
+    )
+    synthesize.add_argument("--ruleset", default=RULESET_ID)
+    synthesize.add_argument("--extraction-profile", default=EXTRACTION_PROFILE_ID)
+    synthesize.add_argument("--normalization-profile", default=NORMALIZATION_PROFILE_ID)
+    synthesize.add_argument("--profile", default=SYNTHESIS_PROFILE_ID)
+    synthesize.add_argument("--max-input-chars", type=int, default=DEFAULT_MAX_INPUT_CHARS)
+    synthesize.add_argument("--max-batch-units", type=int, default=DEFAULT_MAX_BATCH_UNITS)
+    synthesize.add_argument("--max-output-tokens", type=int, default=DEFAULT_MAX_OUTPUT_TOKENS)
     return parser
 
 
@@ -172,7 +224,31 @@ def main(argv: list[str] | None = None) -> int:
             ).normalize(args.source_id, args.snapshot_id)
             sys.stdout.write(manifest.to_json())
             return 0
-    except (AcquisitionError, SnapshotError, ClassificationError, ExtractionError, NormalizationError) as exc:
+        if args.command == "synthesize":
+            manifest = SynthesisEngine(
+                snapshot_root=args.snapshots_root,
+                classification_root=args.classifications_root,
+                extraction_root=args.extractions_root,
+                normalization_root=args.normalized_root,
+                output_root=args.out,
+                ruleset=args.ruleset,
+                extraction_profile=args.extraction_profile,
+                normalization_profile=args.normalization_profile,
+                profile=args.profile,
+                max_input_chars=args.max_input_chars,
+                max_batch_units=args.max_batch_units,
+                max_output_tokens=args.max_output_tokens,
+            ).synthesize(args.source_id, args.snapshot_id, model=args.model)
+            sys.stdout.write(manifest.to_json())
+            return 0
+    except (
+        AcquisitionError,
+        SnapshotError,
+        ClassificationError,
+        ExtractionError,
+        NormalizationError,
+        SynthesisError,
+    ) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     return 2
